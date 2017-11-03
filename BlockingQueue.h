@@ -15,12 +15,14 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <exception>
 
 namespace Async
 {
     template <typename T>
     class BlockingQueue
     {
+    public:
         BlockingQueue() {};
         // move constructor
         BlockingQueue(BlockingQueue<T>&& bq);
@@ -87,7 +89,7 @@ namespace Async
 
         while(q_.size() == 0)
         {
-            cv_.wait(l, [this](){ return q.size() > 0;});
+            cv_.wait(l, [this](){ return q_.size() > 0;});
         }
         T temp = q_.front();
         q_.pop();
@@ -107,17 +109,17 @@ namespace Async
 
     // ------<peek at next item to be popped >---------
     template<typename T>
-    T& BlockingQueue::front()
+    T& BlockingQueue<T>::front()
     {
         std::lock_guard<std::mutex> l(mtx_);
         if(q_.size() > 0)
             return q_.front();
-        throw std::exception("attempt to deQue empty queue");
+        throw std::runtime_error("attempt to deQue empty queue");
     }
 
     // -------<remove all element from queue>-----------
     template<typename T>
-    void BlockingQueue::clear()
+    void BlockingQueue<T>::clear()
     {
         std::lock_guard<std::mutex> l(mtx_);
         while(q_.size()>0)
